@@ -1,7 +1,7 @@
 /* 
  * CS:APP Data Lab 
  * 
- * <Please put your name and userid here>
+ * Alex Wong's solution
  * 
  * bits.c - Source file with your solutions to the Lab.
  *          This is the file you will hand in to your instructor.
@@ -143,7 +143,7 @@ NOTES:
  *   Rating: 1
  */
 int bitXor(int x, int y) {
-  return 2;
+  return ~x & y;
 }
 /* 
  * tmin - return minimum two's complement integer 
@@ -152,9 +152,8 @@ int bitXor(int x, int y) {
  *   Rating: 1
  */
 int tmin(void) {
-
-  return 2;
-
+  int x = 1;
+  return x << 31;
 }
 //2
 /*
@@ -165,7 +164,7 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
-  return 2;
+  return !(x & (~x));
 }
 /* 
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
