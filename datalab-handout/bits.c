@@ -143,7 +143,9 @@ NOTES:
  *   Rating: 1
  */
 int bitXor(int x, int y) {
-  return ~x & y;
+  int bothZeroBit = ~x & ~y;
+  int bothOneBit = x & y; 
+  return ~bothOneBit & ~bothZeroBit;
 }
 /* 
  * tmin - return minimum two's complement integer 
@@ -165,7 +167,11 @@ int tmin(void) {
  */
 int isTmax(int x) {
   // 0x7fffffff ^ 0x80000000 = -1
-  return x ^ (1 << 31) + 2;
+  // note: << is banned
+  // take advantage of maximum's overflow
+  int isNonZeroFlag = x + 1;
+  int overflowFlag = ~(x + 1) ^ x;
+  return isNonZeroFlag & !overflowFlag;
 }
 /* 
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -176,7 +182,15 @@ int isTmax(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-  return 2;
+  // build 0xAAAAAAAA as the mask
+  int mask = 0xAA | (0xAA << 8);
+  int mask = 0xAA | (mask << 16);
+  // if there is odd bit, oddBits corresponding bit set 1
+  int oddBits = x & mask;
+  // check whether all odd bits set to 1
+  // if there is odd bit not set, set as 0
+  int allOddSetOne = oddBits ^ mask;
+  return !allOddSetOne;
 }
 /* 
  * negate - return -x 
@@ -209,7 +223,10 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
-  return 2;
+  int conditionZ = !x;
+  int conditionY = !!x + 1;
+  // use condition to mask the value
+  return (conditionZ & y) | (conditionY & z);
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -219,7 +236,12 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  return 2;
+  int signX = (x >> 31) & 1;
+  int signY = (y >> 31) & 1;
+  int xNegativeYNonNegative = signX & (!signY);
+  int xNonNegativeYNegative = signY & !(signX);
+  int signXMinusY = ((x + ~y + 1) >> 31) & 1;
+  return xNegativeYNonNegative | !xNonNegativeYNegative | signXMinusY;
 }
 //4
 /* 
