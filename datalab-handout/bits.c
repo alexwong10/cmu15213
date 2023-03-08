@@ -166,11 +166,11 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
-  // 0x7fffffff ^ 0x80000000 = -1
-  // note: << is banned
+  // 0 + 1 = 1 only for 0
+  int isNonZeroFlag = !!(x + 1);
   // take advantage of maximum's overflow
-  int isNonZeroFlag = x + 1;
-  int overflowFlag = ~(x + 1) ^ x;
+  // >> is banned, otherwise ((x + 1) >> 31) & !(x >> 31)
+  int overflowFlag = ~((x + 1) ^ x);
   return isNonZeroFlag & !overflowFlag;
 }
 /* 
@@ -182,15 +182,25 @@ int isTmax(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-  // build 0xAAAAAAAA as the mask
-  int mask = 0xAA | (0xAA << 8);
-  int mask = 0xAA | (mask << 16);
-  // if there is odd bit, oddBits corresponding bit set 1
-  int oddBits = x & mask;
-  // check whether all odd bits set to 1
-  // if there is odd bit not set, set as 0
-  int allOddSetOne = oddBits ^ mask;
-  return !allOddSetOne;
+  // // build 0xAAAAAAAA as the mask
+  // // if x & 0xAAAAAAAA = 0xAAAAAAAA, return 1
+  // int mask = 0xAA | (0xAA << 8);
+  // mask = 0xAA | (mask << 16);
+  // // if there is odd bit, oddBits corresponding bit set 1
+  // int oddBits = x & mask;
+  // // check whether all odd bits set to 1
+  // // if there is odd bit not set, set as 0
+  // // why not work?
+  // int allOddSetOne = oddBits ^ mask;
+  // return !allOddSetOne;
+  /*
+   * half the bit vector, `&` the halves until get a 4 bit vector
+   * then test if it has pattern as `[1x1x]` (use mask 0xAA)
+   * it evalutes true iff. all odd bits
+   */
+  int a = (x & (x >> 16));
+  int b = (a & (a >> 8));
+  return !((b & 0xAA) ^ 0xAA);
 }
 /* 
  * negate - return -x 
@@ -213,7 +223,14 @@ int negate(int x) {
  *   Rating: 3
  */
 int isAsciiDigit(int x) {
-  return 2;
+  // brute force, check if x is 0x30-0x39
+    /*
+   * y = x - 0x30, so 0x0 <= y <= 0x9
+   * for 0x0 <= y <= 0x7, just right shift 3 bits and check result is 0,
+   * for y = 0x8 or y = 0x9, check as special cases
+   */
+  int y = x + ~0x30 + 1;
+  return (!(y >> 3)) | !(y ^ 0x8) | !(y ^ 0x9);
 }
 /* 
  * conditional - same as x ? y : z 
@@ -223,10 +240,15 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
-  int conditionZ = !x;
-  int conditionY = !!x + 1;
+    /*
+   * with bit operation, we can use this rule:
+   *   when mask = [00...00], (mask & a) | (~mask | b) = b;
+   *   when mask = [11...11], (mask & a) | (~mask | b) = a;
+   * so we try to make these two masks from x
+   */ 
+  int mask = !x + ~1 + 1;
   // use condition to mask the value
-  return (conditionZ & y) | (conditionY & z);
+  return (mask & y) | (~mask & z);
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -253,7 +275,10 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  return 2;
+  // sign bit of both 0 and -0 is zero
+  int flag1 = (x >> 31) & 0x1;
+  int flag2 = ((~x + 1) >> 31) ^ 0x1;
+  return flag1 & flag2;
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
